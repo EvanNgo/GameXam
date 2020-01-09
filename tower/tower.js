@@ -11,9 +11,13 @@ export default class Tower {
     this.range = 0;
     this.dame = 0;
     this.speed = 0;
+    this.cost = 0;
     this.delayTime = 0;
     this.target = null;
     this.bullets = [];
+  }
+  setCost(cost) {
+    this.cost = cost;
   }
   setDame(dame) {
     this.dame = dame;

@@ -8,11 +8,11 @@ export default class Bullet {
       x: this.tower.position.x,
       y: this.tower.position.y
     };
-    this.speed = Const.GAME_FPS/3;
+    this.speed = Const.GAME_FPS/6;
     this.isDraw = true;
   }
-  hitEnemy() {
-    this.target.hitByBullet(this.tower.dame);
+  hit() {
+    this.target.earnDame(this.tower.dame);
   }
   update() {
     if (this.target != null) {
@@ -37,7 +37,7 @@ export default class Bullet {
           }
         }
       } else {
-        this.hitEnemy();
+        this.hit();
         this.destroy();
       }
     } else {
@@ -54,7 +54,7 @@ export default class Bullet {
   draw() {
     this.tower.board.game.ctx.fillStyle = "rgb(0, 0, 0)";
     this.tower.board.game.ctx.beginPath();
-    this.tower.board.game.ctx.arc(this.position.x, this.position.y, Const.GOUND_SIZE/6, 0, 2 * Math.PI);
+    this.tower.board.game.ctx.arc(this.position.x, this.position.y, Const.GOUND_SIZE/9, 0, 2 * Math.PI);
     this.tower.board.game.ctx.fill();
   }
 }

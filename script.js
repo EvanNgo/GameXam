@@ -1,4 +1,5 @@
 import Game from "./game.js";
+
 document.addEventListener("DOMContentLoaded", function() {
   var PIXEL_RATIO = (function () {
     var ctx = document.createElement("canvas").getContext("2d"),
@@ -13,6 +14,11 @@ document.addEventListener("DOMContentLoaded", function() {
 
   var root = document.getElementById('root');
   var game = new Game(root, PIXEL_RATIO);
+
+  function onWindowResize() {
+    game.onResize();
+  }
+  window.onresize = onWindowResize;
 
   game.canvas.addEventListener("mousemove",onMouseMove,false);
   function onMouseMove(event) {

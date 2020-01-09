@@ -1,15 +1,20 @@
 import * as Const from "../../const.js";
+import EnemyHealthBar from "../../ui/enemy_health_bar.js";
 
 export default class Enemy {
   constructor(board, pointWays, startPoint) {
     this.board = board;
     this.pointWays = pointWays;
+    this.startPoint = startPoint;
 
     //Basic info
     this.speed = 0;
     this.health = 0;
+    this.currentHealth = 0;
     this.dame = 0;
     this.isAlive = true;
+    this.money = 0;
+    this.isBoss = false;
 
     //Style
     this.color = "0, 0, 0";
@@ -17,10 +22,17 @@ export default class Enemy {
     // Point
     this.target = null;
     this.currentTarget = -1;
+    this.position = null;
+    this.healthBar = null;
+    this.init();
+  }
+  init() {
     this.position = {
-      x: startPoint.x * Const.GOUND_SIZE + Const.GOUND_SIZE/2,
-      y: startPoint.y * Const.GOUND_SIZE + Const.GOUND_SIZE/2
+      x: this.startPoint.x * Const.GOUND_SIZE + Const.GOUND_SIZE/2,
+      y: this.startPoint.y * Const.GOUND_SIZE + Const.GOUND_SIZE/2
     };
+    this.healthBar = new EnemyHealthBar(this);
+    this.currentHealth = this.health;
   }
   setColor(color) {
     this.color = color;
@@ -33,14 +45,26 @@ export default class Enemy {
   }
   setHealth(health) {
     this.health = health;
+    this.currentHealth = this.health;
   }
-  hitByBullet(dame) {
-    this.health -= dame;
-    if (this.health <= 0) {
+  setMoney(money) {
+    this.money = money;
+  }
+  setBoss() {
+    this.isBoss = true;
+    this.health= this.health * 10;
+    this.currentHealth = this.health;
+    this.dame = this.dame * 5;
+  }
+  earnDame(dame) {
+    this.currentHealth -= dame;
+    if (this.currentHealth <= 0) {
+      this.board.earnMoney(this.money);
       this.destroy();
     }
   }
   hit() {
+    this.board.earnDame(this.dame);
     this.destroy();
   }
   distancToTarget() {
@@ -93,14 +117,26 @@ export default class Enemy {
     if (this.target!=null) {
       this.distancToTarget();
     }
+    this.healthBar.update();
   }
   draw() {
-    this.board.game.ctx.beginPath();
-    this.board.game.ctx.arc(this.position.x, this.position.y, Const.GOUND_SIZE/2.5, 0, 2 * Math.PI);
-    this.board.game.ctx.strokeStyle = "rgb("+this.color+")";
-    this.board.game.ctx.stroke();
-    this.board.game.ctx.arc(this.position.x, this.position.y, Const.GOUND_SIZE/2.5, 0, 2 * Math.PI);
-    this.board.game.ctx.fillStyle = "rgba("+this.color+",0.25)";
-    this.board.game.ctx.fill();
+    if (!this.isBoss) {
+      this.board.game.ctx.beginPath();
+      this.board.game.ctx.arc(this.position.x, this.position.y, Const.GOUND_SIZE/4, 0, 2 * Math.PI);
+      this.board.game.ctx.strokeStyle = "rgb("+this.color+")";
+      this.board.game.ctx.stroke();
+      this.board.game.ctx.arc(this.position.x, this.position.y, Const.GOUND_SIZE/4, 0, 2 * Math.PI);
+      this.board.game.ctx.fillStyle = "rgba("+this.color+",0.25)";
+      this.board.game.ctx.fill();
+    } else {
+      this.board.game.ctx.beginPath();
+      this.board.game.ctx.arc(this.position.x, this.position.y, Const.GOUND_SIZE/3, 0, 2 * Math.PI);
+      this.board.game.ctx.strokeStyle = "rgb("+this.color+")";
+      this.board.game.ctx.stroke();
+      this.board.game.ctx.arc(this.position.x, this.position.y, Const.GOUND_SIZE/3, 0, 2 * Math.PI);
+      this.board.game.ctx.fillStyle = "rgba("+this.color+",0.8)";
+      this.board.game.ctx.fill();
+    }
+    this.healthBar.draw();
   }
 }

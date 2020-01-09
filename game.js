@@ -8,7 +8,6 @@ export default class Game {
     this.canvas = null;
     this.rect = null;
     this.ctx = null;
-    this.isAlive = null;
     this.board = null;
 
     this.init();
@@ -17,16 +16,19 @@ export default class Game {
     this.canvas = document.createElement('canvas');
     this.ctx = this.canvas.getContext('2d');
     this.canvas.width = Const.GAME_WIDTH * this.ratio;
-    this.canvas.height = Const.GAME_HEIGHT * this.ratio;
+    this.canvas.height = (Const.GAME_HEIGHT + Const.INFO_BAR_HEIGHT) * this.ratio;
     this.canvas.style.width = Const.GAME_WIDTH + "px";
-    this.canvas.style.height = Const.GAME_HEIGHT + "px";
+    this.canvas.style.height = Const.GAME_HEIGHT + Const.INFO_BAR_HEIGHT + "px";
     this.ctx.setTransform(this.ratio, 0, 0, this.ratio, 0, 0);
     this.root.appendChild(this.canvas);
-    this.isAlive = true;
     this.rect = this.canvas.getBoundingClientRect();
 
     //create board
     this.board = new Board(this);
+  }
+
+  onResize() {
+    this.rect = this.canvas.getBoundingClientRect();
   }
 
   onMouseMove(position) {
@@ -50,11 +52,16 @@ export default class Game {
     this.board.draw();
   }
   loop() {
-    if (() => this.isAlive()) {
+    if (this.board.isAlive) {
       this.clear();
       this.update();
       this.draw();
       setTimeout(() => this.loop(), 1000/Const.GAME_FPS);
+    } else {
+      this.clear();
+      this.board.game.ctx.font = "50px tahoma bold";
+      this.board.game.ctx.textAlign = "center";
+      this.board.game.ctx.fillText("Game Over" , Const.GAME_WIDTH/2, Const.GAME_HEIGHT/2);
     }
   }
   start() {

@@ -45,10 +45,18 @@ export default class Ground {
           position.y >= this.position.y &&
           position.y <= this.position.y + this.size) {
             if (this.type === 0) {
-              this.board.addTower(new TowerAK(this.board, {x: this.x, y: this.y}));
+              this.buyTower();
             }
       }
     }
+  }
+  buyTower() {
+    var newTower = new TowerAK(this.board, {x: this.x, y: this.y});
+    if (newTower.cost > this.board.money) {
+      console.log('Không đủ tiền, em chơi vậy là chết chị rồi em ơi');
+      return;
+    }
+    this.board.addTower(newTower,{x:this.x,y:this.y});
   }
   onMouseMove(position) {
     if (this.isCanHover) {
