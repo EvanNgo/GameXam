@@ -2,19 +2,26 @@ import * as Const from "../../const.js";
 import EnemyHealthBar from "../../ui/enemy_health_bar.js";
 
 export default class Enemy {
-  constructor(board, pointWays, startPoint) {
+  constructor(board, pointWays) {
     this.board = board;
     this.pointWays = pointWays;
-    this.startPoint = startPoint;
+    this.startPoint = this.pointWays[0];
 
     //Basic info
     this.speed = 0;
+    this.rootSpeed = 0;
     this.health = 0;
     this.currentHealth = 0;
     this.dame = 0;
     this.isAlive = true;
     this.money = 0;
+    this.armor = 0;
     this.isBoss = false;
+    this.freeze = 0;
+    this.freezeTime = 0;
+    this.stunTime = 0;
+    this.poisonTime = 0;
+    this.poisonEarnTime = Const.GAME_FPS/2;
 
     //Style
     this.color = "0, 0, 0";
@@ -38,7 +45,8 @@ export default class Enemy {
     this.color = color;
   }
   setSpeed(speed) {
-    this.speed = speed * Const.MOVE_SPEED;
+    this.rootSpeed = speed * Const.MOVE_SPEED;
+    this.speed = this.rootSpeed;
   }
   setDame(dame) {
     this.dame = dame;
@@ -50,24 +58,65 @@ export default class Enemy {
   setMoney(money) {
     this.money = money;
   }
+  setArmor(armor) {
+    this.armor = armor;
+  }
+  earnFreeze(freeze) {
+    this.freeze = freeze;
+    this.freezeTime = Const.FREEZE_TIME * Const.GAME_FPS;
+  }
+  earnStun(stun) {
+    let r = Math.floor(Math.random() * 100);
+    if (r < stun) {
+      this.stunTime = 1.5 * Const.GAME_FPS;
+    }
+  }
+  earnPoisonDame() {
+    this.currentHealth -= this.poison;
+    this.poisonEarnTime = Const.GAME_FPS/2;
+    if (this.currentHealth <= 0) {
+      this.board.earnMoney(this.money);
+      this.destroy();
+    }
+  }
+  earnPoison(poison) {
+    this.poison += poison;
+    this.poisonTime = 2 * Const.GAME_FPS;
+    console.log(this.poison);
+  }
+  earnFire() {
+
+  }
+  earnDame(dame) {
+    this.currentHealth -= dame - this.armor;
+    if (this.currentHealth <= 0) {
+      this.board.earnMoney(this.money);
+      this.destroy();
+    }
+  }
   setBoss() {
     this.isBoss = true;
     this.health= this.health * 10;
     this.currentHealth = this.health;
     this.dame = this.dame * 5;
   }
-  earnDame(dame) {
-    this.currentHealth -= dame;
-    if (this.currentHealth <= 0) {
-      this.board.earnMoney(this.money);
-      this.destroy();
-    }
-  }
   hit() {
     this.board.earnDame(this.dame);
     this.destroy();
   }
   distancToTarget() {
+    if (this.freezeTime > 0) {
+      this.freezeTime--;
+      if (this.freezeTime === 0) {
+        this.freeze = 0;
+      }
+    }
+    if (this.stunTime > 0) {
+      this.stunTime--;
+      this.speed = 0;
+    } else {
+      this.speed = this.rootSpeed * (1 - this.freeze/100);
+    }
     if (Math.abs(this.position.x - this.target.x) < this.speed) {
       this.position.x = this.target.x;
     } else {
@@ -116,6 +165,15 @@ export default class Enemy {
     this.findTarget();
     if (this.target!=null) {
       this.distancToTarget();
+    }
+    if (this.poisonTime > 0) {
+      this.poisonTime--;
+      this.poisonEarnTime--;
+      if (this.poisonEarnTime === 0) {
+        this.earnPoisonDame();
+      }
+    } else {
+      this.poison = 0;
     }
     this.healthBar.update();
   }

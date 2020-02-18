@@ -13,6 +13,12 @@ export default class Bullet {
   }
   hit() {
     this.target.earnDame(this.tower.dame);
+    if (this.tower.freeze > 0) {
+      this.target.earnFreeze(this.tower.freeze);
+    }
+    if (this.tower.stun > 0) {
+      this.target.earnStun(this.tower.stun);
+    }
   }
   update() {
     if (this.target != null) {
@@ -37,7 +43,11 @@ export default class Bullet {
           }
         }
       } else {
-        this.hit();
+        if (this.tower.poison > 0) {
+          this.target.earnPoison(this.tower.poison);
+        } else {
+          this.hit();
+        }
         this.destroy();
       }
     } else {
@@ -52,9 +62,9 @@ export default class Bullet {
     return distance;
   }
   draw() {
-    this.tower.board.game.ctx.fillStyle = "rgb(0, 0, 0)";
+    this.tower.board.game.ctx.fillStyle = "rgb("+this.tower.color+")";
     this.tower.board.game.ctx.beginPath();
-    this.tower.board.game.ctx.arc(this.position.x, this.position.y, Const.GOUND_SIZE/9, 0, 2 * Math.PI);
+    this.tower.board.game.ctx.arc(this.position.x, this.position.y, Const.GOUND_SIZE/10, 0, 2 * Math.PI);
     this.tower.board.game.ctx.fill();
   }
 }

@@ -10,11 +10,19 @@ export default class Tower {
     }
     this.range = 0;
     this.dame = 0;
+    this.freeze = 0;
     this.speed = 0;
+    this.poison = 0;
+    this.fire = 0;
+    this.stun = 0;
     this.cost = 0;
     this.delayTime = 0;
     this.target = null;
+    this.color = "";
     this.bullets = [];
+  }
+  setColor(color) {
+    this.color = color;
   }
   setCost(cost) {
     this.cost = cost;
@@ -27,6 +35,18 @@ export default class Tower {
   }
   setSpeed(speed) {
     this.speed = speed;
+  }
+  setFreeze(freeze) {
+    this.freeze = freeze;
+  }
+  setFire(fire) {
+    this.fire = fire;
+  }
+  setPoison(poison) {
+    this.poison = poison;
+  }
+  setStun(stun) {
+    this.stun = stun;
   }
   findTarget() {
     for (let i = 0; i < this.board.enemies.length; i++) {
@@ -62,7 +82,7 @@ export default class Tower {
     }
   }
   draw() {
-    this.board.game.ctx.fillStyle = "rgb(0, 0, 0)";
+    this.board.game.ctx.fillStyle = "rgb("+this.color+")";
     this.board.game.ctx.beginPath();
     this.board.game.ctx.arc(this.position.x, this.position.y, Const.GOUND_SIZE/4, 0, 2 * Math.PI);
     this.board.game.ctx.fill();

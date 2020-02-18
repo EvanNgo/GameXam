@@ -1,117 +1,142 @@
 import * as Const from "./const.js";
+import * as DATA from './data_defence.js';
 import Ground from './ground.js';
 import EnemyOrc from './enemy/enemy_orc.js';
-import TowerAK from './tower/tower_ak.js';
 import GameBar from './ui/game_bar.js';
-
-const _ = 0;  // empty ground
-const X = 1;  // street
-const W = 2;  // enemy food
-const S = 8;  // start point
-const E = 9;  // End point
-const T = 10; // have tower
+import ShopTower from './ui/shop_tower.js';
 
 export default class Board {
   constructor(game) {
     this.game = game;
-    this.map = [];
-    this.grounds = [];
-    this.streets = [];
-    this.pointWays = [];
-    this.startPoint = {};
-    this.endPoint = {};
-    this.delayTime = 0;
+    this.health = 100;
+    this.currentHealth = this.health;
 
     //basic info
-    this.health = 0;
-    this.currentHealth = 0;
+    this.data = DATA.DEFENCE[0];
+    this.name = "";
     this.money = 0;
-    this.currentWay = 0;
-    this.waitToSpawnEnemies = 0;
-    this.enemyWays = [];
-    this.enemyOfCurrentWay = 0;
-    this.isAlive = true;
+    this.map = [];
+    this.wayPoints = [];
+    this.ways = [];
+    this.wayNumber = 0;
+    this.wayDetail = null;
+    this.enemyNumber = 0;
+    this.currentEnemy = 0;
+    this.enemyCount = 0;
+    this.timeToSpawn = 0;
+    this.isWaitNextWay = 0;
+    this.timeToNextWay = 3 * Const.GAME_FPS;
 
+    this.isAlive = true;
     //Objects
     this.enemies = [];
     this.towers = [];
+    this.grounds = [];
     this.gamebar = null;
+    this.shopTower = null;
 
     this.init();
   }
+
   init() {
-    this.health = 100;
-    this.currentHealth = this.health;
-    this.money = 5;
-    this.enemyWays = Const.GAME_WAYS;
-    this.timeToNextWay = 2 * Const.GAME_FPS;
-    this.isWaitNextWay = true;
-    this.map = [
-    //  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
-      [ _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],  //0
-      [ _, _, _, _, _, _, _, _, _, _, _, _, _, S, _, _],  //1
-      [ _, _, _, _, _, _, _, _, _, _, _, _, _, X, _, _],  //2
-      [ _, W, X, X, X, W, _, _, _, _, _, _, _, X, _, _],  //3
-      [ _, X, _, _, _, X, _, _, _, _, _, _, _, X, _, _],  //4
-      [ _, X, _, _, _, X, _, _, _, _, _, _, _, X, _, _],  //5
-      [ _, X, _, _, _, W, X, X, X, X, X, X, X, W, _, _],  //6
-      [ _, E, _, _, _, _, _, _, _, _, _, _, _, _, _, _],  //7
-      [ _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]   //8
-    ];
+    this.name = this.data.name;
+    this.money = this.data.money;
+    this.map = this.data.map;
+    this.wayPoints = this.data.wayPoints;
+    this.ways = this.data.ways;
+    this.currentWay = this.ways[this.wayNumber];
+    this.currentEnemy= this.currentWay[this.enemyNumber]
+    this.timeToSpawn = this.currentEnemy.d * Const.GAME_FPS;
+
     for (let i = 0; i < this.map.length ; i++) {
       this.grounds.push([]);
       for (let j = 0; j < this.map[i].length ; j++) {
         this.grounds[i].push(new Ground(this, j, i ,this.map[i][j]));
       }
     }
-    this.startPoint = {x:13,y:1};
-    this.endPoint   = {x:1,y:7};
-    this.pointWays  = [
-      {x:13,y:6},{x:5,y:6},{x:5,y:3},{x:1,y:3},{x:1,y:7}
-    ];
-
     //create gamebar
     this.gamebar = new GameBar(this);
+
+    //create shop
+    this.shopTower = new ShopTower(this);
   }
+
   onMouseMove(position) {
-    for (var i = 0; i < this.grounds.length; i++) {
-      for (let j = 0; j < this.grounds[i].length ; j++) {
-        this.grounds[i][j].onMouseMove(position);
+    if (this.shopTower.isOpening) {
+      this.shopTower.onHover(position);
+    } else {
+      for (var i = 0; i < this.grounds.length; i++) {
+        for (let j = 0; j < this.grounds[i].length ; j++) {
+          this.grounds[i][j].onMouseMove(position);
+        }
       }
     }
   }
+
   onMouseClick(position) {
-    for (var i = 0; i < this.grounds.length; i++) {
-      for (let j = 0; j < this.grounds[i].length ; j++) {
-        this.grounds[i][j].onMouseClick(position);
+    if (this.shopTower.isOpening) {
+      this.shopTower.onClick(position);
+    } else {
+      for (var i = 0; i < this.grounds.length; i++) {
+        for (let j = 0; j < this.grounds[i].length ; j++) {
+          this.grounds[i][j].onMouseClick(position);
+        }
       }
     }
   }
-  addTower(tower,position) {
-    this.grounds[position.y][position.x].type = T
+
+  nextWays() {
+    this.wayNumber++;
+    if (this.wayNumber < this.ways.length) {
+      this.currentWay = this.ways[this.wayNumber];
+      this.enemyNumber = 0;
+      this.currentEnemy= this.currentWay[this.enemyNumber]
+      this.timeToSpawn = this.currentEnemy.d;
+      this.isWaitNextWay = 0;
+      this.timeToNextWay = 3 * Const.GAME_FPS;
+    } else {
+      this.destroy();
+      // Winner
+    }
+  }
+
+  spawnEnemy() {
+    this.enemies.push(new EnemyOrc(this,this.wayPoints));
+    this.enemyNumber++;
+    if (this.enemyNumber < this.currentWay.length) {
+      this.timeToSpawn = this.currentWay[this.enemyNumber].d * Const.GAME_FPS;
+    }
+  }
+
+  toggleShop(point) {
+    if (this.shopTower.isOpening) {
+      this.shopTower.closeShop();
+    } else {
+      this.shopTower.openShop(point);
+    }
+  }
+
+  buyTower(tower, point) {
+    this.grounds[point.y][point.x].type = Const.GOUND_TYPE.TOWER;
     this.money -= tower.cost;
     this.towers.push(tower);
   }
+
   earnMoney(money) {
     this.money += money;
   }
+
   earnDame(dame) {
     this.currentHealth -= dame;
     if (this.currentHealth <= 0) {
       this.destroy();
     }
   }
-  nextWays() {
-    this.isWaitNextWay = false;
-    this.currentWay++;
-    this.enemyOfCurrentWay = this.enemyWays[this.currentWay - 1].enemies;
-    this.waitToSpawnEnemies = this.enemyOfCurrentWay;
-    this.delayTime = this.enemyWays[this.currentWay - 1].delay * Const.GAME_FPS;
-    this.timeToNextWay = 5 * Const.GAME_FPS;
-  }
+
   destroy() {
     this.isAlive = false;
   }
+
   update() {
     for (var i = 0; i < this.enemies.length; i++) {
       this.enemies[i].update();
@@ -119,26 +144,33 @@ export default class Board {
         this.enemies.splice(i,1);
       }
     }
-    if (this.waitToSpawnEnemies > 0) {
-      this.delayTime--;
-      if (this.delayTime <= 0) {
-        this.waitToSpawnEnemies--;
-        this.enemies.push(new EnemyOrc(this,this.pointWays, this.startPoint,this.enemyWays[this.currentWay - 1].isBoss));
-        this.delayTime = Math.floor(Math.random() * 200) + 1;
+
+    if (this.enemyNumber < this.currentWay.length) {
+      this.timeToSpawn--;
+      if (this.timeToSpawn <= 0) {
+        this.spawnEnemy();
       }
     }
-    for (var i = 0; i < this.towers.length; i++) {
-      this.towers[i].update();
-    }
-    if (this.waitToSpawnEnemies === 0 && this.currentWay < this.enemyWays.length && this.enemies.length === 0) {
+
+    if (this.enemyNumber >= this.currentWay.length
+       && this.wayNumber < this.ways.length
+       && this.enemies.length === 0) {
       this.isWaitNextWay = true;
       this.timeToNextWay--;
       if (this.timeToNextWay===0) {
         this.nextWays();
       }
     }
+
+    for (var i = 0; i < this.towers.length; i++) {
+      this.towers[i].update();
+    }
+
     this.gamebar.update();
+
+    this.shopTower.update();
   }
+
   draw() {
     for (let i = 0; i < this.grounds.length ; i++) {
       for (let j = 0; j < this.grounds[i].length ; j++) {
@@ -152,5 +184,6 @@ export default class Board {
       this.towers[i].draw();
     }
     this.gamebar.draw();
+    this.shopTower.draw();
   }
 }
